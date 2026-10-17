@@ -1,10 +1,13 @@
 // ==UserScript==
 // @name         FetLife Technicolor Elephants
 // @namespace    http://tampermonkey.net/
-// @version      0.1
-// @description  Replaces images of penises on FetLife with pictures of tiny technicolor elephants.
+// @version      0.2
+// @description  Replaces images of penises on FetLife with pictures of tiny technicolor elephants using NSFW.js for detection.
 // @author       You
 // @match        https://fetlife.com/*
+// @require      https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js
+// @require      https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@latest/dist/tf-backend-wasm.min.js
+// @require      https://cdn.jsdelivr.net/npm/nsfwjs@latest/dist/nsfwjs.min.js
 // @grant        none
 // ==/UserScript==
 
@@ -14,40 +17,63 @@
     // Array of technicolor elephant image URLs
     const elephantImages = [
         // Placeholder URLs - replace with actual URLs of technicolor elephants
-        'https://via.placeholder.com/150/FF00FF/FFFFFF?text=Elephant1',
-        'https://via.placeholder.com/150/00FFFF/000000?text=Elephant2',
-        'https://via.placeholder.com/150/FFFF00/000000?text=Elephant3'
+        'https://i.imgur.com/example1.png',
+        'https://i.imgur.com/example2.png',
+        'https://i.imgur.com/example3.png'
     ];
 
-    function replacePenisImages() {
-        // This is a very basic placeholder for identifying images to replace.
-        // A more robust solution would involve image analysis or more specific selectors.
-        // For now, let's target images with certain characteristics or within specific contexts.
+    let nsfwModel; // Declare a variable to hold the loaded NSFW.js model
 
-        // Example: Target all img tags for demonstration.
-        // In a real scenario, you'd want to be much more selective.
-        document.querySelectorAll('img').forEach(img => {
-            // Simple heuristic: if the image's aspect ratio is indicative of a common "penis" photo.
-            // This is highly unreliable and will likely replace many innocent images.
-            // This needs significant refinement.
-            const width = img.naturalWidth;
-            const height = img.naturalHeight;
+    async function loadModel() {
+        console.log('Loading NSFW.js model...');
+        try {
+            // Set WASM backend for better performance
+            tf.setBackend('wasm');
+            await tf.ready();
+            nsfwModel = await nsfwjs.load(); // Load the default MobileNetV2 model
+            console.log('NSFW.js model loaded successfully.');
+        } catch (error) {
+            console.error('Failed to load NSFW.js model:', error);
+            return;
+        }
+        // Once model is loaded, we can start processing images
+        replacePenisImages();
+    }
 
-            if (width > 0 && height > 0) {
-                const aspectRatio = width / height;
-                // Just an example heuristic: very tall and thin or very wide and short images might be targeted.
-                // This is purely illustrative and not effective for the stated goal.
-                if (aspectRatio > 2 || aspectRatio < 0.5) {
+    async function replacePenisImages() {
+        if (!nsfwModel) {
+            console.log('NSFW.js model not yet loaded, deferring image replacement.');
+            return; // Model not loaded yet
+        }
+
+        document.querySelectorAll('img').forEach(async img => {
+            // Avoid reprocessing images or processing very small images
+            if (img.dataset.nsfwChecked || img.width < 50 || img.height < 50) {
+                return;
+            }
+            img.dataset.nsfwChecked = 'true'; // Mark as checked
+
+            try {
+                const predictions = await nsfwModel.classify(img);
+                // Check for 'Porn', 'Hentai', or 'Sexy' categories
+                const isNSFW = predictions.some(p => 
+                    (p.className === 'Porn' || p.className === 'Hentai' || p.className === 'Sexy') && p.probability > 0.7
+                );
+
+                if (isNSFW) {
                     const randomElephant = elephantImages[Math.floor(Math.random() * elephantImages.length)];
                     img.src = randomElephant;
-                    img.srcset = randomElephant; // Update srcset as well if present
+                    img.srcset = ''; // Clear srcset to ensure elephant image is used
+                    console.log('Replaced NSFW image with technicolor elephant.');
                 }
+            } catch (error) {
+                console.error('Error classifying image:', error);
             }
         });
     }
 
-    // Run the replacement function once on page load
-    replacePenisImages();
+    // Run the model loading and then image replacement
+    loadModel();
 
     // Observe for new elements being added to the DOM (e.g., infinite scroll)
     const observer = new MutationObserver(replacePenisImages);
