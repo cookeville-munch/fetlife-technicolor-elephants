@@ -16,9 +16,7 @@
 
     // Array of technicolor elephant image URLs
     const elephantImages = [
-        'https://i.redd.it/sy0c460o85431.jpg', // Dumbo Pink Elephants on Parade collage
-        'https://via.placeholder.com/150/00FFFF/000000?text=Elephant2', // Placeholder
-        'https://via.placeholder.com/150/FFFF00/000000?text=Elephant3'  // Placeholder
+        'https://lookaside.instagram.com/seo/google_widget/crawler/?media_id=3832018732469719353' // Dumbo Pink Elephants from Instagram
     ];
 
     let nsfwModel; // Declare a variable to hold the loaded NSFW.js model
