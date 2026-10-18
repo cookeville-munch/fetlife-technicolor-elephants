@@ -34,7 +34,7 @@ Simply navigate to [FetLife.com](https://fetlife.com/) after installing the scri
 
 ## Configuration & Customization
 
-*   **Elephant Images:** The script currently uses a single Dumbo-style technicolor elephant image. To add more variety, you can edit the script (via Tampermonkey's dashboard) and update the `elephantImages` array with direct URLs to your preferred elephant images.
+*   **Elephant Images:** The script uses a curated collection of 7 technicolor elephant images from Wikimedia Commons and Instagram. You can preview all of them in the [elephant gallery](docs/elephant-gallery.html). To customize or add more variety, you can edit the script (via Tampermonkey's dashboard) and update the `elephantImages` array with direct URLs to your preferred elephant images.
 *   **Detection Threshold:** The `probability > 0.7` threshold for NSFW detection can be adjusted in the script. A lower value might catch more images but could lead to more false positives. A higher value might miss some explicit content but reduce false positives.
 *   **Image Selectors:** For advanced users, the script currently processes all `<img>` tags. You could refine the `document.querySelectorAll('img')` selector to target more specific image containers or elements on FetLife that are likely to hold user-uploaded content, potentially improving performance and accuracy.
 
@@ -44,6 +44,5 @@ This script is experimental and relies on an AI model for classification. While 
 
 ## Future Improvements
 
-*   Incorporate a wider variety of technicolor elephant images.
 *   Allow user configuration of settings (e.g., threshold, elephant image URLs) directly within the Tampermonkey menu.
 *   Optimize image scanning to reduce resource usage.
