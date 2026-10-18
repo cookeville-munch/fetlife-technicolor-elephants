@@ -17,12 +17,12 @@
   // Make sure these are direct links to images (e.g., .jpg, .png, .gif).
   const elephantImages = [
     'https://lookaside.instagram.com/seo/google_widget/crawler/?media_id=3832018732469719353', // Dumbo Pink Elephants from Instagram
-    'https://i.imgur.com/cafzDjSb.jpg', // Dumbo the flying elephant
+    'https://i.imgur.com/Flkpjb.jpg', // I'm a lurker. First post. Me. The Elephant. And the Rainbow.
+    'https://i.imgur.com/9oNnlHEb.jpg', // Rainbow elephant!
+    'https://i.imgur.com/smQpcm5b.jpg', // Circuit Playing Cards (Neon Green + Rainbow White)
     'https://i.imgur.com/J9n8exdb.jpg', // Baby pink elephant
     'https://i.imgur.com/XiNlussb.jpg', // Adorable pink baby elephant
     'https://i.imgur.com/gctz7Rbb.jpg', // Trippy Pink Elephant
-    'https://i.imgur.com/ddVaficb.jpg', // Colorful Baby Elephant painting
-    'https://i.imgur.com/56A3Vd9b.jpg', // Pink Elephant
   ];
 
   // Probability threshold for NSFW detection. Images with a classification probability
