@@ -160,17 +160,29 @@ describe('Integration Tests: Image Replacement Flow', () => {
       <img src="nsfw2.jpg" width="100" height="100">
     `;
 
-    // Mock classify to always return NSFW for predictable testing
-    const mockClassify = jest.fn().mockResolvedValue([
-      { className: 'Porn', probability: 0.9 },
-    ]);
+    // Mock classify to alternate between NSFW (Porn) and Safe (Neutral)
+    let callCount = 0;
+    const mockClassify = jest.fn().mockImplementation(() => {
+      callCount++;
+      if (callCount <= 2) {
+        return Promise.resolve([{ className: 'Porn', probability: 0.9 }]);
+      }
+      return Promise.resolve([{ className: 'Neutral', probability: 0.9 }]);
+    });
 
     const mockModel = { classify: mockClassify };
     modifyModel(mockModel);
 
+    // Mock Math.random to always return 0 for predictable testing
+    const originalRandom = Math.random;
+    Math.random = () => 0;
+
     const images = document.querySelectorAll('img');
     const promises = Array.from(images).map(checkAndReplaceImage);
     await Promise.all(promises);
+
+    // Restore original Math.random
+    Math.random = originalRandom;
 
     const elephantUrl = ELEPHANT_IMAGES[0]; // Use first image for consistent testing
     const replacedCount = Array.from(document.querySelectorAll('img'))
