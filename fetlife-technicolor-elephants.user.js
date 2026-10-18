@@ -26,6 +26,11 @@
     'https://i.imgur.com/kieuANAb.jpg', // Les Clark animation Dumbo part 3
     'https://i.imgur.com/b6FvQTyb.jpg', // John Lounsbery animation Dumbo
     'https://i.imgur.com/fQRLZg4b.jpg', // Bill Tytla animation Dumbo part 3
+    'https://i.imgur.com/D1yFC5ab.jpg', // Pink Elephants on Parade! (classic Disney frame)
+    'https://i.imgur.com/LMrGVyIb.jpg', // Pink Elephants on parade! (classic Disney frame)
+    'https://i.imgur.com/i62w1Atb.jpg', // Pink Elephants On Parade (classic Disney frame)
+    'https://i.imgur.com/965XADOb.jpg', // Pink Elephants on Parade detail (classic Disney frame)
+    'https://i.imgur.com/u8nYce9b.jpg', // Pink Elephants on Parade (classic Disney frame)
   ];
 
   // Probability threshold for NSFW detection. Images with a classification probability
