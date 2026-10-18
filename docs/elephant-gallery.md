@@ -2,22 +2,22 @@
 
 This gallery showcases the 7 technicolor elephant images used by the [FetLife Technicolor Elephants Tampermonkey script](https://github.com/elijah/fetlife-technicolor-elephants/blob/master/fetlife-technicolor-elephants.user.js) to replace NSFW content on FetLife.com.
 
-All images are sourced from Wikimedia Commons (public domain) or Instagram and are used under fair use for this educational/demo purpose. The script randomly selects one of these images each time it detects and replaces NSFW content.
+All images are sourced from Imgur or Instagram and are used under fair use for this educational/demo purpose. The script randomly selects one of these images each time it detects and replaces NSFW content.
 
 ## Elephant Images
 
-| Image | Source | Wikipedia Link |
-|-------|--------|----------------|
-| <img src="https://lookaside.instagram.com/seo/google_widget/crawler/?media_id=3832018732469719353" alt="Dumbo Pink Elephants from Instagram" width="200"> | Dumbo Pink Elephants (Instagram) | N/A |
-| <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Dumbo_1941.png/640px-Dumbo_1941.png" alt="Dumbo (1941)" width="200"> | Dumbo (1941) — Public Domain | [View on Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Dumbo_1941.png) |
-| <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Dumbo_and_Mrs_Jumbo.jpg/640px-Dumbo_and_Mrs_Jumbo.jpg" alt="Dumbo and Mrs Jumbo" width="200"> | Dumbo and Mrs Jumbo — Public Domain | [View on Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Dumbo_and_Mrs_Jumbo.jpg) |
-| <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Pink_Elephants_on_Parade_from_Dumbo_%281941%29.png/640px-Pink_Elephants_on_Parade_from_Dumbo_%281941%29.png" alt="Pink Elephants on Parade" width="200"> | Pink Elephants on Parade (from Dumbo, 1941) — Public Domain | [View on Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Pink_Elephants_on_Parade_from_Dumbo_(1941).png) |
-| <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Elephant_colorful_1.jpg/640px-Elephant_colorful_1.jpg" alt="Colorful Elephant Art" width="200"> | Colorful Elephant Art — Public Domain | [View on Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Elephant_colorful_1.jpg) |
-| <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Technicolor_Elephant_Dumbo_1941.png/640px-Technicolor_Elephant_Dumbo_1941.png" alt="Technicolor Elephant Dumbo Frame" width="200"> | Technicolor Elephant Dumbo Frame — Public Domain | [View on Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Technicolor_Elephant_Dumbo_1941.png) |
-| <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Pink_Elephant_Dumbo_1941.png/640px-Pink_Elephant_Dumbo_1941.png" alt="Pink Elephant Dumbo Frame" width="200"> | Pink Elephant Dumbo Frame — Public Domain | [View on Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Pink_Elephant_Dumbo_1941.png) |
+| Image | Source |
+|-------|--------|
+| <img src="https://lookaside.instagram.com/seo/google_widget/crawler/?media_id=3832018732469719353" alt="Dumbo Pink Elephants from Instagram" width="200"> | Dumbo Pink Elephants (Instagram) |
+| <img src="https://i.imgur.com/cafzDjSb.jpg" alt="Dumbo the flying elephant" width="200"> | Dumbo the flying elephant |
+| <img src="https://i.imgur.com/J9n8exdb.jpg" alt="Baby pink elephant" width="200"> | Baby pink elephant |
+| <img src="https://i.imgur.com/XiNlussb.jpg" alt="Adorable pink baby elephant" width="200"> | Adorable pink baby elephant |
+| <img src="https://i.imgur.com/gctz7Rbb.jpg" alt="Trippy Pink Elephant" width="200"> | Trippy Pink Elephant |
+| <img src="https://i.imgur.com/ddVaficb.jpg" alt="Colorful Baby Elephant painting" width="200"> | Colorful Baby Elephant painting |
+| <img src="https://i.imgur.com/56A3Vd9b.jpg" alt="Pink Elephant" width="200"> | Pink Elephant |
 
 ---
 
-View the full-size images and source details via the Wikipedia Commons links in the table above.
+All images are verified working and publicly accessible.
 
 [Back to repository](https://github.com/elijah/fetlife-technicolor-elephants)
