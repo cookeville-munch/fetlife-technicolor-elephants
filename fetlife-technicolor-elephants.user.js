@@ -17,12 +17,12 @@
   // Make sure these are direct links to images (e.g., .jpg, .png, .gif).
   const elephantImages = [
     'https://lookaside.instagram.com/seo/google_widget/crawler/?media_id=3832018732469719353', // Dumbo Pink Elephants from Instagram
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Dumbo_1941.png/640px-Dumbo_1941.png', // Dumbo (1941)
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Dumbo_and_Mrs_Jumbo.jpg/640px-Dumbo_and_Mrs_Jumbo.jpg', // Dumbo and Mrs Jumbo
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Pink_Elephants_on_Parade_from_Dumbo_%281941%29.png/640px-Pink_Elephants_on_Parade_from_Dumbo_%281941%29.png', // Pink Elephants on Parade
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Elephant_colorful_1.jpg/640px-Elephant_colorful_1.jpg', // Colorful Elephant Art
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Technicolor_Elephant_Dumbo_1941.png/640px-Technicolor_Elephant_Dumbo_1941.png', // Technicolor Dumbo Frame
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Pink_Elephant_Dumbo_1941.png/640px-Pink_Elephant_Dumbo_1941.png', // Pink Elephant Frame
+    'https://i.imgur.com/cafzDjSb.jpg', // Dumbo the flying elephant
+    'https://i.imgur.com/J9n8exdb.jpg', // Baby pink elephant
+    'https://i.imgur.com/XiNlussb.jpg', // Adorable pink baby elephant
+    'https://i.imgur.com/gctz7Rbb.jpg', // Trippy Pink Elephant
+    'https://i.imgur.com/ddVaficb.jpg', // Colorful Baby Elephant painting
+    'https://i.imgur.com/56A3Vd9b.jpg', // Pink Elephant
   ];
 
   // Probability threshold for NSFW detection. Images with a classification probability
