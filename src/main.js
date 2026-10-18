@@ -14,6 +14,9 @@ const ELEPHANT_IMAGES = [
   'https://i.imgur.com/J9n8exdb.jpg', // Baby pink elephant
   'https://i.imgur.com/XiNlussb.jpg', // Adorable pink baby elephant
   'https://i.imgur.com/gctz7Rbb.jpg', // Trippy Pink Elephant
+  'https://i.imgur.com/kieuANAb.jpg', // Les Clark animation Dumbo part 3
+  'https://i.imgur.com/b6FvQTyb.jpg', // John Lounsbery animation Dumbo
+  'https://i.imgur.com/fQRLZg4b.jpg', // Bill Tytla animation Dumbo part 3
 ];
 
 /**

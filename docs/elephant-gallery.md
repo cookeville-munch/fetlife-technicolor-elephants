@@ -1,6 +1,6 @@
 # FetLife Technicolor Elephants Gallery
 
-This gallery showcases the 7 technicolor elephant images used by the [FetLife Technicolor Elephants Tampermonkey script](https://github.com/elijah/fetlife-technicolor-elephants/blob/master/fetlife-technicolor-elephants.user.js) to replace NSFW content on FetLife.com.
+This gallery showcases the 10 technicolor elephant images used by the [FetLife Technicolor Elephants Tampermonkey script](https://github.com/elijah/fetlife-technicolor-elephants/blob/master/fetlife-technicolor-elephants.user.js) to replace NSFW content on FetLife.com.
 
 All images are sourced from Imgur or Instagram and are used under fair use for this educational/demo purpose. The script randomly selects one of these images each time it detects and replaces NSFW content.
 
@@ -15,6 +15,9 @@ All images are sourced from Imgur or Instagram and are used under fair use for t
 | <img src="https://i.imgur.com/J9n8exdb.jpg" alt="Baby pink elephant" width="200"> | Baby pink elephant |
 | <img src="https://i.imgur.com/XiNlussb.jpg" alt="Adorable pink baby elephant" width="200"> | Adorable pink baby elephant |
 | <img src="https://i.imgur.com/gctz7Rbb.jpg" alt="Trippy Pink Elephant" width="200"> | Trippy Pink Elephant |
+| <img src="https://i.imgur.com/kieuANAb.jpg" alt="Les Clark animation Dumbo part 3" width="200"> | Les Clark animation Dumbo part 3 |
+| <img src="https://i.imgur.com/b6FvQTyb.jpg" alt="John Lounsbery animation Dumbo" width="200"> | John Lounsbery animation Dumbo |
+| <img src="https://i.imgur.com/fQRLZg4b.jpg" alt="Bill Tytla animation Dumbo part 3" width="200"> | Bill Tytla animation Dumbo part 3 |
 
 ---
 
