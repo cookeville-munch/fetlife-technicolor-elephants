@@ -1,6 +1,6 @@
 # FetLife Technicolor Elephants Gallery
 
-This gallery showcases the 12 technicolor elephant images used by the [FetLife Technicolor Elephants Tampermonkey script](https://github.com/elijah/fetlife-technicolor-elephants/blob/master/fetlife-technicolor-elephants.user.js) to replace NSFW content on FetLife.com.
+This gallery showcases the 17 technicolor elephant images used by the [FetLife Technicolor Elephants Tampermonkey script](https://github.com/elijah/fetlife-technicolor-elephants/blob/master/fetlife-technicolor-elephants.user.js) to replace NSFW content on FetLife.com.
 
 All images are sourced from Imgur or Instagram and are used under fair use for this educational/demo purpose. The script randomly selects one of these images each time it detects and replaces NSFW content.
 
@@ -23,6 +23,8 @@ All images are sourced from Imgur or Instagram and are used under fair use for t
 | <img src="https://i.imgur.com/i62w1Atb.jpg" alt="Pink Elephants On Parade" width="200"> | Pink Elephants On Parade |
 | <img src="https://i.imgur.com/965XADOb.jpg" alt="Pink Elephants on Parade detail" width="200"> | Pink Elephants on Parade detail |
 | <img src="https://i.imgur.com/u8nYce9b.jpg" alt="Pink Elephants on Parade" width="200"> | Pink Elephants on Parade |
+| <img src="https://i.imgur.com/WJ6nrGjb.jpg" alt="When I open my eyes, that better be your trunk, Dumbo" width="200"> | When I open my eyes, that better be your trunk, Dumbo |
+| <img src="https://i.imgur.com/VGAgd3Zb.jpg" alt="Drunk trunk Dumbo" width="200"> | Drunk trunk Dumbo |
 
 ---
 
