@@ -25,6 +25,9 @@ const ELEPHANT_IMAGES = [
   'https://i.imgur.com/WJ6nrGjb.jpg', // When I open my eyes, that better be your trunk, Dumbo
   'https://i.imgur.com/VGAgd3Zb.jpg', // Drunk trunk Dumbo
   'https://i.imgur.com/C4h5l1tb.jpg', // Semi-psychedelic elephant I painted. Phycedelephant?
+  'https://i.imgur.com/Aoj9hGub.jpg', // Pop art elephant
+  'https://i.imgur.com/fwVYwf8b.jpg', // Pop art elephant
+  'https://i.imgur.com/dVLeZfgb.jpg', // Elephant graffiti wall
 ];
 
 /**
