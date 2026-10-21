@@ -1,6 +1,6 @@
 # Roadmap — FetLife Technicolor Elephants
 
-## Current State (v0.4.2)
+## Current State (v0.4.3)
 
 - 21 categorized technicolor elephant images across 8 categories
 - Configurable NSFW threshold (default 0.70), persisted via GM storage
@@ -25,6 +25,7 @@
   - `Ctrl+Shift+T` open settings
   - `Ctrl+Shift+U` undo last replacement [#5]
 - **Performance: IntersectionObserver + debounced MutationObserver** — only classifies visible images, 30s cooldown per image [#1]
+- **Self-hosted NSFW model** — MobileNetV2 model files committed to repo (`model/`), eliminates external CDN dependency that fails in userscript sandboxes
 - 111 unit + integration + userscript tests passing
 - Storage abstraction (`GM_getValue`/`GM_setValue` with in-memory test fallback)
 
@@ -36,6 +37,7 @@ No remaining items. All enhancements from the roadmap are complete.
 
 | # | Enhancement | Description |
 |---|-------------|-------------|
+| 13 | **Self-hosted NSFW model** | Model files (`model/model.json`, `model/group1-shard1of1`) committed to repo; primary URL points to `raw.githubusercontent.com/cookeville-munch/.../model/model.json`; falls back to upstream nsfwjs model. Fixes `ERR_NAME_NOT_RESOLVED` in userscript sandboxes where cloudfront.net model URL was dead. |
 | 12 | **Integration tests with a mock NSFW model** | `tests/integration.test.js` stubs `nsfwjs.classify` with a mock model and asserts DOM replacement behavior for Porn/Hentai/Sexy/Neutral classifications, threshold edge cases, error handling, concurrent processing, `replaceWithElephant`, and `undoLastReplacement` LIFO ordering |
 | 10 | **Dark mode settings panel** | Auto-detects `prefers-color-scheme`; manual Light/Dark toggle in the panel; injects theme-aware CSS for the settings panel, stats box, and help text |
 | 9 | **False-positive reporting** | One-click "✗" overlay on replaced elephants reports the image as a false positive; logs to `falsePositiveReports` analytics; whitelists the original src for 7 days (configurable) so it is never re-replaced |
@@ -51,5 +53,5 @@ No remaining items. All enhancements from the roadmap are complete.
 
 ## Notes
 
-- All 12 roadmap items are complete. The project is feature-complete at v0.4.2.
+- All 13 roadmap items are complete. The project is feature-complete at v0.4.3.
 - The `storage` abstraction in `src/main.js` now has a real in-memory fallback (`_memoryStore`) so persistence works in tests without `GM_*` globals.
