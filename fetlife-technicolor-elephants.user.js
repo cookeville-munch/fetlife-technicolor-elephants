@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FetLife Technicolor Elephants
 // @namespace    http://tampermonkey.net/
-// @version      0.4.6
+// @version      0.4.7
 // @description  Replaces images of penises on FetLife with pictures of tiny technicolor elephants using NSFW.js for detection. Includes configurable thresholds, image categories, analytics, keyboard shortcuts, custom elephant URLs, domain allow/block lists, undo, and animations.
 // @author       You
 // @match        https://fetlife.com/*
@@ -1378,7 +1378,11 @@
   // Drawing them onto a canvas taints it, blocking WebGL pixel reads.
   // GM_xmlhttpRequest bypasses CORS entirely; we fetch the image as a blob
   // (same-origin), then create an ImageBitmap from it — no tainting.
-  async function fetchImageAsImageBitmap(src) {
+   async function fetchImageAsImageBitmap(src) {
+    // Forward page cookies so the CDN accepts signed URLs that require a
+    // valid FetLife session. GM_xmlhttpRequest does not auto-send cookies
+    // for cross-origin requests, so we pass them manually.
+    const cookieHeader = document.cookie ? { Cookie: document.cookie } : {};
     const arrayBuffer = await new Promise((resolve, reject) => {
       GM_xmlhttpRequest({
         method: 'GET',
@@ -1386,6 +1390,8 @@
         responseType: 'arraybuffer',
         headers: {
           Referer: 'https://fetlife.com/',
+          Origin: 'https://fetlife.com',
+          ...cookieHeader,
         },
         onload: (response) => {
           if (response.status !== 200) {
