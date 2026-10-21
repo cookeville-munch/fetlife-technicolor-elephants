@@ -1384,6 +1384,11 @@
     }
     img.dataset.nsfwChecked = 'true';
 
+    // If the model hasn't loaded yet (or failed), don't attempt classification
+    if (!nsfwModel) {
+      return;
+    }
+
     try {
       const predictions = await nsfwModel.classify(img);
       const shouldReplace = isNSFW(predictions);
@@ -1407,9 +1412,10 @@
   async function replacePenisImages() {
     if (!isEnabled()) return;
     if (_replaceProcessing || !nsfwModel) {
+      // Model not loaded yet - retry later
+      setTimeout(replacePenisImages, 5000);
       return;
     }
-
     _replaceProcessing = true;
 
     try {
@@ -1470,6 +1476,10 @@
   }
 
   async function loadModel() {
+    if (typeof tf === 'undefined' || typeof nsfwjs === 'undefined') {
+      console.error('FetLife Technicolor Elephants: Required libraries (tf/nsfwjs) are not loaded. Check @require URLs or network connectivity.');
+      return false;
+    }
     console.log('FetLife Technicolor Elephants: Loading NSFW.js model...');
     try {
       tf.setBackend('wasm');
@@ -1478,9 +1488,21 @@
       nsfwModel = await nsfwjs.load();
       console.log('FetLife Technicolor Elephants: NSFW.js model loaded successfully.');
       await replacePenisImages();
+      return true;
     } catch (error) {
       console.error('FetLife Technicolor Elephants: Failed to load NSFW.js model:', error);
-      throw error;
+      try {
+        // Fallback to WebGL/CPU backend
+        tf.setBackend('gl');
+        await tf.ready();
+        nsfwModel = await nsfwjs.load();
+        console.log('FetLife Technicolor Elephants: NSFW.js model loaded with WebGL fallback.');
+        await replacePenisImages();
+        return true;
+      } catch (fallbackError) {
+        console.error('FetLife Technicolor Elephants: All model load attempts failed:', fallbackError);
+        return false;
+      }
     }
   }
 
@@ -1515,9 +1537,9 @@
     document.addEventListener('click', handleOutsideClick);
     injectThemeStyles();
     cleanupWhitelist();
-    await loadModel();
 
     // Debounced MutationObserver for dynamic content
+    // Set up IMMEDIATELY so dynamic images are always watched, regardless of model load status
     let mutationDebounce;
     const observer = new MutationObserver(() => {
       clearTimeout(mutationDebounce);
@@ -1526,7 +1548,14 @@
       }, 500);
     });
     observer.observe(document.body, { childList: true, subtree: true });
+
+    await loadModel();
+
+    // Once the model loads, immediately process any images that were already seen
+    await replacePenisImages();
   }
 
-  initialize();
+  initialize().catch((err) => {
+    console.error('FetLife Technicolor Elephants: Initialization failed:', err);
+  });
 }());
