@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FetLife Technicolor Elephants
 // @namespace    http://tampermonkey.net/
-// @version      0.4.5
+// @version      0.4.6
 // @description  Replaces images of penises on FetLife with pictures of tiny technicolor elephants using NSFW.js for detection. Includes configurable thresholds, image categories, analytics, keyboard shortcuts, custom elephant URLs, domain allow/block lists, undo, and animations.
 // @author       You
 // @match        https://fetlife.com/*
@@ -9,7 +9,7 @@
 // @grant        GM_setValue
 // @grant        GM_xmlhttpRequest
 // @require      https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js
-// @require      https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@latest/dist/tf-backend-wasm.min.js
+// @require      https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@latest/dist/tf-backend-webgl.min.js
 // @require      https://cdn.jsdelivr.net/npm/nsfwjs@latest/dist/nsfwjs.min.js
 // ==/UserScript==
 
@@ -1384,6 +1384,9 @@
         method: 'GET',
         url: src,
         responseType: 'arraybuffer',
+        headers: {
+          Referer: 'https://fetlife.com/',
+        },
         onload: (response) => {
           if (response.status !== 200) {
             reject(new Error(`HTTP ${response.status}: ${response.statusText}`));
