@@ -1481,8 +1481,8 @@
    * @returns {Promise<boolean>} True if the model loaded successfully
    */
   const MODEL_URLS = [
-    'https://d1zv2aa70wpiur.cloudfront.net/tfjs_quant_nsfw_mobilenet/model.json', // default (may fail)
-    'https://raw.githubusercontent.com/infinitered/nsfwjs/master/models/mobilenet_v2/model.json', // github raw fallback
+    'https://raw.githubusercontent.com/cookeville-munch/fetlife-technicolor-elephants/master/model/model.json', // self-hosted model
+    'https://raw.githubusercontent.com/infinitered/nsfwjs/master/models/mobilenet_v2/model.json', // upstream fallback
   ];
 
   async function tryLoadModelWithBackend(backend, modelUrl) {

@@ -7,7 +7,7 @@ A Tampermonkey script designed to replace images identified as sexually explicit
 - **Client-Side NSFW Detection:** Utilizes the [NSFW.js](https://github.com/infinitered/nsfwjs) library to classify images directly within your browser.
 - **Technicolor Elephant Replacement:** Replaces identified explicit images with a randomly selected technicolor elephant image.
 - **Dynamic Content Handling:** Automatically processes images loaded dynamically (e.g., through infinite scrolling) to ensure comprehensive filtering.
-- **Performance Optimized:** Leverages the WebAssembly (WASM) backend of TensorFlow.js for improved performance in image classification, and only classifies images near the viewport.
+- **Performance Optimized:** Runs on WebGL backend with CPU fallback (WASM backend is unreliable in userscript sandboxes); only classifies images near the viewport.
 - **Categorized Styles:** Eight built-in elephant categories (classic animation, pink elephants on parade, trunk action, neon & rainbow, pink & cute, Instagram, psychedelic, pop art, graffiti).
 - **Configurable Threshold:** Adjust the NSFW detection sensitivity from the in-page settings panel.
 - **Custom Elephant URLs:** Add your own elephant image URLs alongside the built-in library.
@@ -21,7 +21,7 @@ A Tampermonkey script designed to replace images identified as sexually explicit
 
 This script integrates NSFW.js, a TensorFlow.js-based library, to perform client-side image analysis. When you visit FetLife.com, the script does the following:
 
-1. **Loads NSFW.js Model:** It loads a pre-trained machine learning model (MobileNetV2, running on the WASM backend) into your browser.
+1. **Loads NSFW.js Model:** It loads a pre-trained machine learning model (MobileNetV2, running on WebGL with CPU fallback) into your browser.
 2. **Scans Images:** It iterates through `<img>` elements on the page, both initially loaded and those added dynamically.
 3. **Classifies Content:** Each image is passed to the NSFW.js model, which classifies its content into categories such as `Porn`, `Hentai`, `Sexy`, `Neutral`, and `Drawing`.
 4. **Replaces Explicit Images:** If an image's classification confidence for `Porn`, `Hentai`, or `Sexy` exceeds the configured threshold (default 70%), the script replaces its `src` attribute with a URL pointing to a technicolor elephant image.
