@@ -34,7 +34,7 @@ To use this script, you will need a user script manager like [Tampermonkey](http
 
 1. **Install Tampermonkey:** If you don't have it already, install the Tampermonkey browser extension for your browser.
 2. **Install the User Script:**
-   - Go to the raw script file on GitHub: [`fetlife-technicolor-elephants.user.js`](https://github.com/elijah/fetlife-technicolor-elephants/blob/master/fetlife-technicolor-elephants.user.js)
+   - Go to the raw script file on GitHub: [`fetlife-technicolor-elephants.user.js`](https://github.com/cookeville-munch/fetlife-technicolor-elephants/blob/master/fetlife-technicolor-elephants.user.js)
    - Click on the "Raw" button to view the raw script content.
    - Tampermonkey should detect the `.user.js` file and prompt you to install it. Confirm the installation.
 
