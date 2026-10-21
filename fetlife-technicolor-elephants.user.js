@@ -1402,12 +1402,28 @@
         method: 'GET',
         url: src,
         responseType: 'arraybuffer',
-        onload: (response) => resolve(response.response),
-        onerror: reject,
-        ontimeout: reject,
+        onload: (response) => {
+          if (response.status !== 200) {
+            reject(new Error(`HTTP ${response.status}: ${response.statusText}`));
+            return;
+          }
+          if (!response.response || !(response.response instanceof ArrayBuffer)) {
+            reject(new Error(`Invalid response type: ${typeof response.response}`));
+            return;
+          }
+          if (response.response.byteLength === 0) {
+            reject(new Error('Empty response'));
+            return;
+          }
+          resolve(response.response);
+        },
+        onerror: (err) => reject(new Error(`GM_xmlhttpRequest error: ${err}`)),
+        ontimeout: () => reject(new Error('Request timeout')),
       });
     });
-    const blob = new Blob([arrayBuffer], { type: detectImageMime(arrayBuffer) });
+    const mimeType = detectImageMime(arrayBuffer);
+    const blob = new Blob([arrayBuffer], { type: mimeType });
+    console.log(`FetLife Technicolor Elephants: Fetched ${src} as ${mimeType} (${arrayBuffer.byteLength} bytes)`);
     return createImageBitmap(blob);
   }
 
@@ -1442,7 +1458,7 @@
         recordReplacement(getSelectedCategory(), maxPred.probability);
       }
     } catch (error) {
-      console.error('FetLife Technicolor Elephants: Error classifying image:', error);
+      console.error(`FetLife Technicolor Elephants: Error classifying image ${img.src}:`, error);
     }
   }
 
