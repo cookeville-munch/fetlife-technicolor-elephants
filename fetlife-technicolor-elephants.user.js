@@ -1480,18 +1480,23 @@
    * @param {string} backend - The backend name ('gl', 'cpu', 'wasm')
    * @returns {Promise<boolean>} True if the model loaded successfully
    */
-  async function tryLoadModelWithBackend(backend) {
+  const MODEL_URLS = [
+    'https://d1zv2aa70wpiur.cloudfront.net/tfjs_quant_nsfw_mobilenet/model.json', // default (may fail)
+    'https://raw.githubusercontent.com/infinitered/nsfwjs/master/models/mobilenet_v2/model.json', // github raw fallback
+  ];
+
+  async function tryLoadModelWithBackend(backend, modelUrl) {
     try {
-      console.log(`FetLife Technicolor Elephants: Trying backend "${backend}"...`);
+      console.log(`FetLife Technicolor Elephants: Trying backend "${backend}" with model ${modelUrl}...`);
       tf.setBackend(backend);
       await tf.ready();
 
-      nsfwModel = await nsfwjs.load();
-      console.log(`FetLife Technicolor Elephants: NSFW.js model loaded successfully with ${backend} backend.`);
+      nsfwModel = await nsfwjs.load(modelUrl);
+      console.log(`FetLife Technicolor Elephants: NSFW.js model loaded successfully with ${backend} backend from ${modelUrl}`);
       await replacePenisImages();
       return true;
     } catch (error) {
-      console.warn(`FetLife Technicolor Elephants: Backend "${backend}" failed:`, error.message);
+      console.warn(`FetLife Technicolor Elephants: Backend "${backend}" with model ${modelUrl} failed:`, error.message);
       // Clean up backend state before trying the next one
       try {
         tf.removeBackend(backend);
@@ -1515,9 +1520,11 @@
     // Backends MUST be tried sequentially: tf.setBackend() mutates global state.
     const backends = ['gl', 'cpu']; // WebGL, then pure CPU
     for (const backend of backends) {
-      // eslint-disable-next-line no-await-in-loop
-      const loaded = await tryLoadModelWithBackend(backend);
-      if (loaded) return true;
+      for (const modelUrl of MODEL_URLS) {
+        // eslint-disable-next-line no-await-in-loop
+        const loaded = await tryLoadModelWithBackend(backend, modelUrl);
+        if (loaded) return true;
+      }
     }
 
     console.error('FetLife Technicolor Elephants: All model load attempts failed.');
