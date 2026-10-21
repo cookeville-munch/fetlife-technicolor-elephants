@@ -7,12 +7,13 @@
 // @match        https://fetlife.com/*
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @grant        GM_xmlhttpRequest
 // @require      https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js
 // @require      https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@latest/dist/tf-backend-wasm.min.js
 // @require      https://cdn.jsdelivr.net/npm/nsfwjs@latest/dist/nsfwjs.min.js
 // ==/UserScript==
 
-/* global tf, nsfwjs, GM_getValue, GM_setValue */
+/* global tf, nsfwjs, GM_getValue, GM_setValue, GM_xmlhttpRequest */
 (function fteUserscript() {
   // Accessibility styles: visible focus rings and reduced-motion support.
   // Injected once so the in-page UI is keyboard-navigable and honours the
@@ -1372,6 +1373,44 @@
     return false;
   }
 
+  // ----- Cross-origin image loading -----
+  // FetLife images live on a CDN that doesn't send CORS headers.
+  // Drawing them onto a canvas taints it, blocking WebGL pixel reads.
+  // GM_xmlhttpRequest bypasses CORS entirely; we fetch the image as a blob
+  // (same-origin), then create an ImageBitmap from it — no tainting.
+  const _imageMimeTypes = [
+    { bytes: [0x89, 0x50, 0x4e, 0x47], type: 'image/png' },
+    { bytes: [0xff, 0xd8, 0xff], type: 'image/jpeg' },
+    { bytes: [0x47, 0x49, 0x46, 0x38], type: 'image/gif' },
+    { bytes: [0x42, 0x4d], type: 'image/bmp' },
+  ];
+
+  function detectImageMime(arrayBuffer) {
+    const head = new Uint8Array(arrayBuffer, 0, 12);
+    // RIFF....WEBP
+    if (head[0] === 0x52 && head[1] === 0x49 && head[2] === 0x46 && head[3] === 0x46
+      && head[8] === 0x57 && head[9] === 0x45 && head[10] === 0x42 && head[11] === 0x50) {
+      return 'image/webp';
+    }
+    const match = _imageMimeTypes.find(({ bytes }) => bytes.every((b, i) => head[i] === b));
+    return match ? match.type : 'image/jpeg';
+  }
+
+  async function fetchImageAsImageBitmap(src) {
+    const arrayBuffer = await new Promise((resolve, reject) => {
+      GM_xmlhttpRequest({
+        method: 'GET',
+        url: src,
+        responseType: 'arraybuffer',
+        onload: (response) => resolve(response.response),
+        onerror: reject,
+        ontimeout: reject,
+      });
+    });
+    const blob = new Blob([arrayBuffer], { type: detectImageMime(arrayBuffer) });
+    return createImageBitmap(blob);
+  }
+
   async function checkAndReplaceImage(img) {
     if (!isEnabled()) return;
     if (img.dataset.nsfwChecked || img.width < 50 || img.height < 50) {
@@ -1390,7 +1429,10 @@
     }
 
     try {
-      const predictions = await nsfwModel.classify(img);
+      // Fetch the image as a blob via GM_xmlhttpRequest (bypasses CORS),
+      // then create an ImageBitmap — no canvas tainting, works with any CDN.
+      const imgBitmap = await fetchImageAsImageBitmap(img.src);
+      const predictions = await nsfwModel.classify(imgBitmap);
       const shouldReplace = isNSFW(predictions);
 
       if (shouldReplace) {
