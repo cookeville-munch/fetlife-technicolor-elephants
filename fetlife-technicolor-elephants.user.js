@@ -1421,10 +1421,23 @@
         ontimeout: () => reject(new Error('Request timeout')),
       });
     });
-    const mimeType = detectImageMime(arrayBuffer);
-    const blob = new Blob([arrayBuffer], { type: mimeType });
-    console.log(`FetLife Technicolor Elephants: Fetched ${src} as ${mimeType} (${arrayBuffer.byteLength} bytes)`);
-    return createImageBitmap(blob);
+    const blob = new Blob([arrayBuffer]); // no type hint — createImageBitmap sniffs magic bytes itself
+    console.log(`FetLife Technicolor Elephants: Fetched ${src} (${arrayBuffer.byteLength} bytes)`);
+    try {
+      return await createImageBitmap(blob);
+    } catch (bitmapError) {
+      // createImageBitmap is strict about formats. Fall back to an Image element,
+      // which can decode more formats (e.g. WebP) and is still same-origin (no tainting).
+      console.warn(`FetLife Technicolor Elephants: createImageBitmap failed for ${src}, trying Image element:`, bitmapError.message);
+      const img = new Image();
+      const url = URL.createObjectURL(blob);
+      img.src = url;
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+      return img;
+    }
   }
 
   async function checkAndReplaceImage(img) {
