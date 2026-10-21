@@ -7,12 +7,25 @@ const {
   replaceWithElephant,
   ELEPHANT_IMAGES,
   modifyModel,
+  setAnimationsEnabled,
+  undoLastReplacement,
 } = require('../src/main');
+
+// Disable animations globally for tests (jsdom doesn't fire transitionend)
+beforeEach(() => setAnimationsEnabled(false));
+
+// Safety net: restore Math.random after every test so a failing test cannot
+// leak a stubbed Math.random into subsequent tests.
+const REAL_RANDOM = Math.random;
+afterEach(() => {
+  Math.random = REAL_RANDOM;
+});
 
 describe('Integration Tests: Image Replacement Flow', () => {
   let originalNsfwModel;
 
   beforeEach(() => {
+    setAnimationsEnabled(false);
     document.body.innerHTML = '';
     originalNsfwModel = require('../src/main').nsfwModel;
     modifyModel(originalNsfwModel);
@@ -216,5 +229,76 @@ describe('replaceWithElephant', () => {
     replaceWithElephant(img);
 
     expect(img.srcset).toBe('');
+  });
+});
+
+describe('undoLastReplacement', () => {
+  beforeEach(() => {
+    setAnimationsEnabled(false);
+    document.body.innerHTML = '';
+  });
+
+  test('restores the original src of a replaced image', () => {
+    const img = document.createElement('img');
+    img.src = 'http://localhost/original-image.jpg';
+    document.body.appendChild(img);
+
+    const originalRandom = Math.random;
+    Math.random = () => 0;
+    replaceWithElephant(img);
+    Math.random = originalRandom;
+
+    expect(img.src).toBe(ELEPHANT_IMAGES[0]);
+
+    expect(undoLastReplacement()).toBe(true);
+    expect(img.src).toBe('http://localhost/original-image.jpg');
+  });
+
+  test('marks the undone image so it is not re-replaced', () => {
+    const img = document.createElement('img');
+    img.src = 'http://localhost/original-image.jpg';
+    document.body.appendChild(img);
+
+    replaceWithElephant(img);
+    undoLastReplacement();
+
+    expect(img.dataset.nsfwChecked).toBe('undone');
+  });
+
+  test('undoes in LIFO order', () => {
+    const imgA = document.createElement('img');
+    imgA.src = 'http://localhost/a.jpg';
+    const imgB = document.createElement('img');
+    imgB.src = 'http://localhost/b.jpg';
+    document.body.appendChild(imgA);
+    document.body.appendChild(imgB);
+
+    const originalRandom = Math.random;
+    Math.random = () => 0;
+    replaceWithElephant(imgA);
+    replaceWithElephant(imgB);
+    Math.random = originalRandom;
+
+    expect(undoLastReplacement()).toBe(true);
+    expect(imgB.src).toBe('http://localhost/b.jpg');
+    expect(imgA.src).toBe(ELEPHANT_IMAGES[0]);
+
+    expect(undoLastReplacement()).toBe(true);
+    expect(imgA.src).toBe('http://localhost/a.jpg');
+  });
+
+  test('skips entries for images removed from the DOM', () => {
+    const detached = document.createElement('img');
+    detached.src = 'http://localhost/detached.jpg';
+
+    replaceWithElephant(detached);
+
+    const attached = document.createElement('img');
+    attached.src = 'http://localhost/attached.jpg';
+    document.body.appendChild(attached);
+    replaceWithElephant(attached);
+
+    expect(undoLastReplacement()).toBe(true);
+    expect(attached.src).toBe('http://localhost/attached.jpg');
   });
 });

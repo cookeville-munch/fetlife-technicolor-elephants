@@ -1,6 +1,6 @@
 {
   "name": "fetlife-technicolor-elephants",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "description": "A Tampermonkey script designed to replace images identified as sexually explicit on FetLife.com with delightful pictures of tiny technicolor elephants.",
   "main": "fetlife-technicolor-elephants.user.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "lint": "eslint . --ext .js",
-    "docs": "jsdoc -c jsdoc.config.js -r . -d docs",
+    "docs": "jsdoc -c jsdoc.config.js",
     "test:integration": "jest --testPathPattern=integration.test.js",
     "prepare": "husky install"
   },
