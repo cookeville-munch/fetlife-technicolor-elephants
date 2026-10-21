@@ -1,6 +1,6 @@
 # Roadmap — FetLife Technicolor Elephants
 
-## Current State (v0.4.3)
+## Current State (v0.4.4)
 
 - 21 categorized technicolor elephant images across 8 categories
 - Configurable NSFW threshold (default 0.70), persisted via GM storage
@@ -26,6 +26,7 @@
   - `Ctrl+Shift+U` undo last replacement [#5]
 - **Performance: IntersectionObserver + debounced MutationObserver** — only classifies visible images, 30s cooldown per image [#1]
 - **Self-hosted NSFW model** — MobileNetV2 model files committed to repo (`model/`), eliminates external CDN dependency that fails in userscript sandboxes
+- **CORS-safe image loading** — `fetchImageAsImageBitmap()` uses `GM_xmlhttpRequest` to bypass cross-origin restrictions, then creates an `ImageBitmap` from a Blob; no canvas tainting, works with any CDN
 - 111 unit + integration + userscript tests passing
 - Storage abstraction (`GM_getValue`/`GM_setValue` with in-memory test fallback)
 
@@ -37,6 +38,7 @@ No remaining items. All enhancements from the roadmap are complete.
 
 | # | Enhancement | Description |
 |---|-------------|-------------|
+| 14 | **CORS-safe image loading** | `fetchImageAsImageBitmap()` uses `GM_xmlhttpRequest` to bypass cross-origin restrictions, then creates an `ImageBitmap` from a Blob — no canvas tainting, works with any CDN. Fixes `SecurityError: Failed to execute 'texSubImage2D'` when classifying images from FetLife's CDN. MIME type is auto-detected (PNG, JPEG, GIF, BMP, WebP). |
 | 13 | **Self-hosted NSFW model** | Model files (`model/model.json`, `model/group1-shard1of1`) committed to repo; primary URL points to `raw.githubusercontent.com/cookeville-munch/.../model/model.json`; falls back to upstream nsfwjs model. Fixes `ERR_NAME_NOT_RESOLVED` in userscript sandboxes where cloudfront.net model URL was dead. |
 | 12 | **Integration tests with a mock NSFW model** | `tests/integration.test.js` stubs `nsfwjs.classify` with a mock model and asserts DOM replacement behavior for Porn/Hentai/Sexy/Neutral classifications, threshold edge cases, error handling, concurrent processing, `replaceWithElephant`, and `undoLastReplacement` LIFO ordering |
 | 10 | **Dark mode settings panel** | Auto-detects `prefers-color-scheme`; manual Light/Dark toggle in the panel; injects theme-aware CSS for the settings panel, stats box, and help text |
@@ -53,5 +55,5 @@ No remaining items. All enhancements from the roadmap are complete.
 
 ## Notes
 
-- All 13 roadmap items are complete. The project is feature-complete at v0.4.3.
+- All 14 roadmap items are complete. The project is feature-complete at v0.4.4.
 - The `storage` abstraction in `src/main.js` now has a real in-memory fallback (`_memoryStore`) so persistence works in tests without `GM_*` globals.
