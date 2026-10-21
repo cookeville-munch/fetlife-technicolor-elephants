@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FetLife Technicolor Elephants
 // @namespace    http://tampermonkey.net/
-// @version      0.4.4
+// @version      0.4.5
 // @description  Replaces images of penises on FetLife with pictures of tiny technicolor elephants using NSFW.js for detection. Includes configurable thresholds, image categories, analytics, keyboard shortcuts, custom elephant URLs, domain allow/block lists, undo, and animations.
 // @author       You
 // @match        https://fetlife.com/*
@@ -1378,24 +1378,6 @@
   // Drawing them onto a canvas taints it, blocking WebGL pixel reads.
   // GM_xmlhttpRequest bypasses CORS entirely; we fetch the image as a blob
   // (same-origin), then create an ImageBitmap from it — no tainting.
-  const _imageMimeTypes = [
-    { bytes: [0x89, 0x50, 0x4e, 0x47], type: 'image/png' },
-    { bytes: [0xff, 0xd8, 0xff], type: 'image/jpeg' },
-    { bytes: [0x47, 0x49, 0x46, 0x38], type: 'image/gif' },
-    { bytes: [0x42, 0x4d], type: 'image/bmp' },
-  ];
-
-  function detectImageMime(arrayBuffer) {
-    const head = new Uint8Array(arrayBuffer, 0, 12);
-    // RIFF....WEBP
-    if (head[0] === 0x52 && head[1] === 0x49 && head[2] === 0x46 && head[3] === 0x46
-      && head[8] === 0x57 && head[9] === 0x45 && head[10] === 0x42 && head[11] === 0x50) {
-      return 'image/webp';
-    }
-    const match = _imageMimeTypes.find(({ bytes }) => bytes.every((b, i) => head[i] === b));
-    return match ? match.type : 'image/jpeg';
-  }
-
   async function fetchImageAsImageBitmap(src) {
     const arrayBuffer = await new Promise((resolve, reject) => {
       GM_xmlhttpRequest({
