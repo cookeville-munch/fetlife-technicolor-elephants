@@ -136,11 +136,25 @@
     enableAnimations: true,
     allowedDomains: [],
     blockedDomains: [],
+    theme: 'auto',
+    schedule: {
+      enabled: false,
+      start: '09:00',
+      end: '17:00',
+      days: [1, 2, 3, 4, 5],
+    },
   };
 
   let nsfwModel;
   let settings = { ...DEFAULT_SETTINGS };
-  let analytics = { replacements: 0, byCategory: {}, byConfidence: {} };
+  let analytics = {
+    replacements: 0,
+    byCategory: {},
+    byConfidence: {},
+    falsePositiveReports: 0,
+    scheduleBypassCount: 0,
+    timeOfDayStats: {},
+  };
 
   // ----- Settings Management -----
   function loadSettings() {
@@ -192,6 +206,280 @@
   function setEnabled(enabled) {
     settings.enabled = enabled;
     saveSettings();
+  }
+
+  // ----- Theme Management -----
+  function getTheme() {
+    return settings.theme || 'auto';
+  }
+
+  function setTheme(theme) {
+    const valid = ['auto', 'light', 'dark'];
+    if (valid.includes(theme)) {
+      settings.theme = theme;
+      saveSettings();
+      injectThemeStyles();
+    }
+  }
+
+  /**
+   * Determines whether dark mode should be active based on the selected theme.
+   * @returns {boolean} True if dark mode is active
+   */
+  function isDarkMode() {
+    const theme = getTheme();
+    if (theme === 'dark') return true;
+    if (theme === 'light') return false;
+    // auto: respect prefers-color-scheme
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Injects theme-based CSS for the settings panel and overlays.
+   */
+  function injectThemeStyles() {
+    const existing = document.getElementById('fte-theme-styles');
+    if (existing) existing.remove();
+
+    const dark = isDarkMode();
+    const style = document.createElement('style');
+    style.id = 'fte-theme-styles';
+    style.textContent = `
+      #fte-settings-panel {
+        background: ${dark ? '#1e1e1e' : '#fff'} !important;
+        color: ${dark ? '#e0e0e0' : '#333'} !important;
+      }
+      #fte-settings-panel h3,
+      #fte-settings-panel strong,
+      #fte-stats strong {
+        color: ${dark ? '#ff8da5' : '#e84c8a'} !important;
+      }
+      #fte-settings-panel label,
+      #fte-settings-panel span,
+      #fte-settings-panel div {
+        color: ${dark ? '#e0e0e0' : '#333'};
+      }
+      #fte-settings-panel input,
+      #fte-settings-panel select,
+      #fte-settings-panel textarea {
+        background: ${dark ? '#2a2a2a' : '#fff'} !important;
+        color: ${dark ? '#e0e0e0' : '#333'} !important;
+        border: 1px solid ${dark ? '#555' : '#ddd'} !important;
+      }
+      #fte-settings-panel button {
+        background: ${dark ? '#e84c8a' : '#e84c8a'} !important;
+        color: white !important;
+      }
+      #fte-settings-panel button#fte-close-settings,
+      #fte-settings-panel button#fte-reset-analytics,
+      #fte-settings-panel button#fte-export-settings,
+      #fte-settings-panel button#fte-import-settings-btn {
+        color: ${dark ? '#e0e0e0' : '#333'} !important;
+        background: ${dark ? '#2a2a2a' : '#f0f0f0'} !important;
+        border: 1px solid ${dark ? '#555' : '#ddd'} !important;
+      }
+      #fte-stats {
+        background: ${dark ? '#2a2a2a' : '#f9f9f9'} !important;
+        color: ${dark ? '#e0e0e0' : '#333'} !important;
+      }
+      #fte-theme-help,
+      #fte-domain-help,
+      #fte-custom-help {
+        color: ${dark ? '#aaa' : '#666'} !important;
+      }
+      .fte-false-positive-btn {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        width: 24px;
+        height: 24px;
+        background: rgba(0,0,0,0.6);
+        color: white;
+        border: none;
+        border-radius: 3px;
+        font-size: 12px;
+        cursor: pointer;
+        opacity: 0.6;
+        transition: opacity 0.2s, background 0.2s;
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+      }
+      .fte-false-positive-btn:hover {
+        opacity: 1;
+        background: rgba(232, 76, 138, 0.9);
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // ----- False-Positive Whitelist -----
+  const FALSE_POSITIVE_WHITELIST_KEY = 'fte_falsePositiveWhitelist';
+  function loadFalsePositiveWhitelist() {
+    const saved = storage.get(FALSE_POSITIVE_WHITELIST_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.warn('Could not load false-positive whitelist', e);
+      }
+    }
+    return {};
+  }
+  function saveFalsePositiveWhitelist(map) {
+    try {
+      storage.set(FALSE_POSITIVE_WHITELIST_KEY, JSON.stringify(map));
+    } catch (e) {
+      console.warn('Could not save false-positive whitelist', e);
+    }
+  }
+  function isWhitelisted(src, now) {
+    const whitelist = loadFalsePositiveWhitelist();
+    const expiry = whitelist[src];
+    if (!expiry) return false;
+    const currentTime = now === undefined ? Date.now() : now;
+    return currentTime < expiry;
+  }
+  function addToWhitelist(src, days) {
+    const daysToKeep = days || 7;
+    const expiry = Date.now() + daysToKeep * 24 * 60 * 60 * 1000;
+    const whitelist = loadFalsePositiveWhitelist();
+    whitelist[src] = expiry;
+    saveFalsePositiveWhitelist(whitelist);
+  }
+  function cleanupWhitelist(now) {
+    const currentTime = now === undefined ? Date.now() : now;
+    const whitelist = loadFalsePositiveWhitelist();
+    const clean = {};
+    for (const [src, expiry] of Object.entries(whitelist)) {
+      if (currentTime < expiry) {
+        clean[src] = expiry;
+      }
+    }
+    saveFalsePositiveWhitelist(clean);
+  }
+
+  // ----- Schedule Management -----
+  const SCHEDULE_STORAGE_KEY = 'fte_scheduleSettings';
+  function loadScheduleSettings() {
+    const saved = storage.get(SCHEDULE_STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.warn('Could not load schedule settings', e);
+      }
+    }
+    return {
+      enabled: false,
+      start: '09:00',
+      end: '17:00',
+      days: [1, 2, 3, 4, 5],
+    };
+  }
+  function saveScheduleSettings(schedule) {
+    try {
+      storage.set(SCHEDULE_STORAGE_KEY, JSON.stringify(schedule));
+    } catch (e) {
+      console.warn('Could not save schedule settings', e);
+    }
+  }
+  function isWithinSchedule(now) {
+    const currentTime = now === undefined ? Date.now() : now;
+    const schedule = loadScheduleSettings();
+    if (!schedule.enabled) return true;
+    const hour = currentTime.getHours();
+    const minute = currentTime.getMinutes();
+    const time = hour * 60 + minute;
+    const [startHour, startMin] = schedule.start.split(':').map(Number);
+    const [endHour, endMin] = schedule.end.split(':').map(Number);
+    const startTime = startHour * 60 + startMin;
+    const endTime = endHour * 60 + endMin;
+    if (time < startTime || time >= endTime) return false;
+    const dayIndex = currentTime.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+    const allowedDays = new Set(schedule.days);
+    return allowedDays.has(dayIndex);
+  }
+  function getScheduleInfo(now) {
+    const currentTime = now === undefined ? new Date() : now;
+    const schedule = loadScheduleSettings();
+    if (!schedule.enabled) return { within: true, nextStart: null, label: 'Active all day' };
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayIndex = currentTime.getDay();
+    const isAllowed = schedule.days.includes(dayIndex);
+    if (isAllowed) {
+      const hour = currentTime.getHours();
+      const minute = currentTime.getMinutes();
+      const time = hour * 60 + minute;
+      const [startHour, startMin] = schedule.start.split(':').map(Number);
+      const [endHour, endMin] = schedule.end.split(':').map(Number);
+      let nextStart = null;
+      if (time < startHour * 60 + startMin) {
+        nextStart = schedule.start;
+      } else if (time >= endHour * 60 + endMin) {
+        // next start is tomorrow
+        const tomorrow = new Date(currentTime);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowIndex = tomorrow.getDay();
+        if (schedule.days.includes(tomorrowIndex)) {
+          const nextDayName = dayNames[tomorrowIndex];
+          nextStart = `${schedule.start} (${nextDayName})`;
+        } else {
+          // find next allowed day
+          let i = 1;
+          while (i < 7) {
+            const checkIndex = (dayIndex + i) % 7;
+            if (schedule.days.includes(checkIndex)) {
+              nextStart = `${schedule.start} (${dayNames[checkIndex]})`;
+              break;
+            }
+            i += 1;
+          }
+        }
+      } else {
+        nextStart = `until ${schedule.end}`;
+      }
+      return {
+        within: true,
+        nextStart,
+        label: `Active ${schedule.start}-${schedule.end} ${dayNames[dayIndex]}`,
+      };
+    }
+    // schedule disabled but would be active now
+    const hour = currentTime.getHours();
+    const minute = currentTime.getMinutes();
+    const time = hour * 60 + minute;
+    const [startHour, startMin] = schedule.start.split(':').map(Number);
+    const [endHour, endMin] = schedule.end.split(':').map(Number);
+    if (time >= startHour * 60 + startMin && time < endHour * 60 + endMin) {
+      return {
+        within: true,
+        nextStart: null,
+        label: `Active ${schedule.start}-${schedule.end} (schedule disabled)`,
+      };
+    }
+    // find next day
+    const nextStart = schedule.start;
+    return {
+      within: false,
+      nextStart,
+      label: 'Inactive',
+    };
+  }
+
+  // ----- Analytics Helper -----
+  function updateTimeOfDayStats(now) {
+    const currentTime = now === undefined ? new Date() : now;
+    const hour = currentTime.getHours();
+    const key = `${hour}:00`;
+    analytics.timeOfDayStats = analytics.timeOfDayStats || {};
+    analytics.timeOfDayStats[key] = (analytics.timeOfDayStats[key] || 0) + 1;
+    saveAnalytics();
   }
 
   // ----- Custom Elephant Images -----
@@ -359,7 +647,14 @@
   }
 
   function resetAnalytics() {
-    analytics = { replacements: 0, byCategory: {}, byConfidence: {} };
+    analytics = {
+      replacements: 0,
+      byCategory: {},
+      byConfidence: {},
+      falsePositiveReports: 0,
+      scheduleBypassCount: 0,
+      timeOfDayStats: {},
+    };
     saveAnalytics();
     updateToggleButtonStats();
   }
@@ -583,6 +878,16 @@
         </select>
       </div>
 
+      <div style="margin-bottom: 12px;">
+        <label for="fte-theme" style="display: block; margin-bottom: 6px;"><strong>Theme:</strong></label>
+        <select id="fte-theme" aria-describedby="fte-theme-help" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="auto" ${getTheme() === 'auto' ? 'selected' : ''}>Auto (match system)</option>
+          <option value="light" ${getTheme() === 'light' ? 'selected' : ''}>Light</option>
+          <option value="dark" ${getTheme() === 'dark' ? 'selected' : ''}>Dark</option>
+        </select>
+        <div id="fte-theme-help" style="font-size: 11px; color: #666; margin-top: 4px;">Auto follows your operating system's light/dark setting.</div>
+      </div>
+
       <div style="margin-bottom: 16px;">
         <label for="fte-allowed-domain" style="display: block; margin-bottom: 6px;"><strong>Allowed Domains (blank = all):</strong></label>
         <div style="display: flex; gap: 6px; margin-bottom: 6px;">
@@ -603,6 +908,40 @@
         </div>
         <div id="fte-blocked-list" role="list" aria-label="Blocked domains" style="font-size: 11px; color: #333;">
           ${renderDomainList(getBlockedDomains())}
+        </div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label for="fte-schedule-enabled" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" id="fte-schedule-enabled" ${loadScheduleSettings().enabled ? 'checked' : ''} style="width: 18px; height: 18px;">
+          <span>Schedule: only replace during set hours</span>
+        </label>
+        <div id="fte-schedule-controls" style="margin-top: 10px; ${loadScheduleSettings().enabled ? '' : 'display: none;'}">
+          <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+            <div style="flex: 1;">
+              <label for="fte-schedule-start" style="font-size: 11px; color: #666;">Start</label>
+              <input type="time" id="fte-schedule-start" value="${loadScheduleSettings().start}" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div style="flex: 1;">
+              <label for="fte-schedule-end" style="font-size: 11px; color: #666;">End</label>
+              <input type="time" id="fte-schedule-end" value="${loadScheduleSettings().end}" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+          </div>
+<fieldset style="border: 1px solid #ddd; border-radius: 4px; padding: 8px; font-size: 12px;">
+            <legend style="font-size: 11px; color: #666; padding: 0 4px;">Days of week</legend>
+            ${
+  [
+    ['Sun', 0], ['Mon', 1], ['Tue', 2], ['Wed', 3], ['Thu', 4], ['Fri', 5], ['Sat', 6],
+  ].map(([name, idx]) => `
+              <label style="display: inline-block; margin: 2px 4px; cursor: pointer;" for="fte-schedule-day-${idx}">
+                <input type="checkbox" class="fte-schedule-day" id="fte-schedule-day-${idx}" value="${idx}" ${loadScheduleSettings().days.includes(idx) ? 'checked' : ''} style="margin-right: 2px;">
+                <span>${name}</span>
+              </label>`).join('')
+  }
+          </fieldset>
+          <div id="fte-schedule-status" style="font-size: 11px; color: #666; margin-top: 6px;">
+            ${getScheduleInfo().label}
+          </div>
         </div>
       </div>
 
@@ -742,6 +1081,48 @@
       settings.enableAnimations = e.target.value === 'true';
       saveSettings();
     });
+    document.getElementById('fte-theme').addEventListener('change', (e) => {
+      setTheme(e.target.value);
+    });
+
+    // Schedule controls
+    const scheduleEnabled = document.getElementById('fte-schedule-enabled');
+    if (scheduleEnabled) {
+      scheduleEnabled.addEventListener('change', (e) => {
+        const schedule = loadScheduleSettings();
+        schedule.enabled = e.target.checked;
+        saveScheduleSettings(schedule);
+        // Show/hide controls
+        const controls = document.getElementById('fte-schedule-controls');
+        if (controls) controls.style.display = e.target.checked ? 'block' : 'none';
+        // Refresh panel to update status
+        setTimeout(createSettingsPanel, 0);
+      });
+    }
+    const scheduleStart = document.getElementById('fte-schedule-start');
+    if (scheduleStart) {
+      scheduleStart.addEventListener('change', (e) => {
+        const schedule = loadScheduleSettings();
+        schedule.start = e.target.value;
+        saveScheduleSettings(schedule);
+      });
+    }
+    const scheduleEnd = document.getElementById('fte-schedule-end');
+    if (scheduleEnd) {
+      scheduleEnd.addEventListener('change', (e) => {
+        const schedule = loadScheduleSettings();
+        schedule.end = e.target.value;
+        saveScheduleSettings(schedule);
+      });
+    }
+    document.querySelectorAll('.fte-schedule-day').forEach((checkbox) => {
+      checkbox.addEventListener('change', () => {
+        const schedule = loadScheduleSettings();
+        const checked = Array.from(document.querySelectorAll('.fte-schedule-day:checked')).map((c) => Number(c.value));
+        schedule.days = checked.length ? checked : [1, 2, 3, 4, 5];
+        saveScheduleSettings(schedule);
+      });
+    });
 
     // Close on outside click (handler registered once at initialization)
   }
@@ -832,20 +1213,22 @@
     if (!btn || !badge) return;
 
     const count = analytics.replacements || 0;
-    if (count > 0) {
-      badge.textContent = String(count);
-      badge.style.opacity = '1';
-    } else {
-      badge.textContent = '';
-      badge.style.opacity = '0';
-    }
+    const falsePositives = analytics.falsePositiveReports || 0;
+    const within = isWithinSchedule(new Date());
+    const badgeParts = [count > 0 ? String(count) : ''];
+    if (!within) badgeParts.push('SCHEDULED-OFF');
+    if (falsePositives > 0) badgeParts.push(`FP:${falsePositives}`);
+    badge.textContent = badgeParts.filter(Boolean).join(' ');
+    badge.style.opacity = badgeParts.length > 0 ? '1' : '0';
     // Expose the count to assistive tech (the badge itself is aria-hidden)
-    btn.setAttribute(
-      'aria-label',
-      count > 0
-        ? `FetLife Technicolor Elephants settings (${count} image${count === 1 ? '' : 's'} replaced)`
-        : 'FetLife Technicolor Elephants settings',
-    );
+    const labelParts = ['FetLife Technicolor Elephants settings'];
+    if (count > 0) {
+      labelParts.push(`${count} image${count === 1 ? '' : 's'} replaced`);
+    }
+    if (falsePositives > 0) {
+      labelParts.push(`${falsePositives} false-positive report${falsePositives === 1 ? '' : 's'}`);
+    }
+    btn.setAttribute('aria-label', labelParts.join(', '));
   }
 
   // ----- Keyboard Shortcuts -----
@@ -917,6 +1300,12 @@
       _undoHistory.shift();
     }
 
+    // Ensure container is positioned for overlay
+    const container = img.parentElement;
+    if (container && container.style.position === '') {
+      container.style.position = 'relative';
+    }
+
     if (areAnimationsEnabled()) {
       // Fade out → swap src → fade in
       const transitionStyle = img.style.transition;
@@ -927,13 +1316,43 @@
         img.srcset = '';
         img.style.opacity = '1';
         img.style.transition = transitionStyle;
+        addFalsePositiveButton(img);
         console.log('FetLife Technicolor Elephants: Replaced NSFW image with technicolor elephant.');
       }, { once: true });
     } else {
       img.src = randomElephant;
       img.srcset = '';
+      addFalsePositiveButton(img);
       console.log('FetLife Technicolor Elephants: Replaced NSFW image with technicolor elephant.');
     }
+  }
+
+  function addFalsePositiveButton(img) {
+    // Remove any existing button
+    const existing = document.getElementById(`fte-fp-btn-${img.dataset.id}`);
+    if (existing) existing.remove();
+
+    const fpBtn = document.createElement('button');
+    fpBtn.id = `fte-fp-btn-${img.dataset.id}`;
+    fpBtn.className = 'fte-false-positive-btn';
+    fpBtn.setAttribute('aria-label', 'Report this was not NSFW');
+    fpBtn.title = 'Report this was not NSFW';
+    fpBtn.textContent = '✗';
+    fpBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      addToWhitelist(img.src, 7);
+      analytics.falsePositiveReports = (analytics.falsePositiveReports || 0) + 1;
+      saveAnalytics();
+      // Restore original image immediately
+      if (img.dataset.originalSrc && img.src !== img.dataset.originalSrc) {
+        img.src = img.dataset.originalSrc;
+        img.srcset = '';
+      }
+      fpBtn.remove();
+      console.log('FetLife Technicolor Elephants: User reported false positive. Image whitelisted.');
+    });
+    img.insertAdjacentElement('afterend', fpBtn);
   }
 
   function undoLastReplacement() {
@@ -956,6 +1375,11 @@
   async function checkAndReplaceImage(img) {
     if (!isEnabled()) return;
     if (img.dataset.nsfwChecked || img.width < 50 || img.height < 50) {
+      return;
+    }
+    // Skip if whitelisted
+    if (isWhitelisted(img.src)) {
+      img.dataset.nsfwChecked = 'true';
       return;
     }
     img.dataset.nsfwChecked = 'true';
@@ -1070,10 +1494,27 @@
 
     loadSettings();
     loadAnalytics();
+
+    // Check schedule
+    if (!isWithinSchedule(new Date())) {
+      analytics.scheduleBypassCount = (analytics.scheduleBypassCount || 0) + 1;
+      saveAnalytics();
+      console.log('FetLife Technicolor Elephants: Not within scheduled activation window.');
+      createToggleButton();
+      setupKeyboardShortcuts();
+      // Registered once so opening/closing the panel never stacks listeners
+      document.addEventListener('click', handleOutsideClick);
+      injectThemeStyles();
+      updateToggleButtonStats();
+      return;
+    }
+
     createToggleButton();
     setupKeyboardShortcuts();
     // Registered once so opening/closing the panel never stacks listeners
     document.addEventListener('click', handleOutsideClick);
+    injectThemeStyles();
+    cleanupWhitelist();
     await loadModel();
 
     // Debounced MutationObserver for dynamic content

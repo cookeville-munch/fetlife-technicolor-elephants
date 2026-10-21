@@ -6,6 +6,7 @@ const nsfwjs = require('nsfwjs');
  * Storage abstraction that works in both Tampermonkey (GM_getValue/GM_setValue)
  * and Node.js/test environments (in-memory fallback).
  */
+const _memoryStore = new Map();
 const storage = {
   get(key) {
     // eslint-disable-next-line camelcase
@@ -17,7 +18,7 @@ const storage = {
         return undefined;
       }
     }
-    return undefined;
+    return _memoryStore.get(key);
   },
   set(key, value) {
     // eslint-disable-next-line camelcase
@@ -28,9 +29,24 @@ const storage = {
       } catch (e) {
         // ignore
       }
+      return;
     }
+    _memoryStore.set(key, value);
+  },
+  /**
+   * Clears every in-memory value. Used by tests to isolate state.
+   */
+  clear() {
+    _memoryStore.clear();
   },
 };
+
+/**
+ * Clears the in-memory store. Intended for test isolation only.
+ */
+function resetStorage() {
+  _memoryStore.clear();
+}
 
 /**
  * User-configurable script settings.
@@ -208,6 +224,7 @@ let _settings = {
   enableAnimations: true,
   allowedDomains: [],
   blockedDomains: [],
+  theme: 'auto',
 };
 function loadSettings() {
   const saved = storage.get('fte_settings');
@@ -259,6 +276,254 @@ function updateSettings(updates) {
     saveSettings();
   }
   saveSettings();
+}
+
+// ----- Theme Management -----
+
+/**
+ * Gets the configured UI theme.
+ * @returns {string} 'auto', 'light', or 'dark'
+ */
+function getTheme() {
+  return _settings.theme || 'auto';
+}
+
+/**
+ * Sets the UI theme.
+ * @param {string} theme - 'auto', 'light', or 'dark'
+ * @returns {boolean} True if the theme was valid and applied
+ */
+function setTheme(theme) {
+  const valid = ['auto', 'light', 'dark'];
+  if (!valid.includes(theme)) return false;
+  _settings.theme = theme;
+  saveSettings();
+  return true;
+}
+
+/**
+ * Determines whether dark mode should be active for the configured theme.
+ * @returns {boolean} True if dark mode is active
+ */
+function isDarkMode() {
+  const theme = getTheme();
+  if (theme === 'dark') return true;
+  if (theme === 'light') return false;
+  // 'auto' follows the operating system preference
+  if (typeof window !== 'undefined' && window.matchMedia
+    && typeof window.matchMedia === 'function') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  return false;
+}
+
+// ----- False-Positive Whitelist -----
+
+const FALSE_POSITIVE_WHITELIST_KEY = 'fte_falsePositiveWhitelist';
+
+/**
+ * Loads the false-positive whitelist (original image src -> expiry timestamp).
+ * @returns {Object<string, number>}
+ */
+function loadFalsePositiveWhitelist() {
+  const saved = storage.get(FALSE_POSITIVE_WHITELIST_KEY);
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch (e) {
+      console.warn('Could not load false-positive whitelist', e);
+    }
+  }
+  return {};
+}
+
+/**
+ * Persists the false-positive whitelist.
+ * @param {Object<string, number>} map - src to expiry timestamp
+ */
+function saveFalsePositiveWhitelist(map) {
+  try {
+    storage.set(FALSE_POSITIVE_WHITELIST_KEY, JSON.stringify(map));
+  } catch (e) {
+    console.warn('Could not save false-positive whitelist', e);
+  }
+}
+
+/**
+ * Checks whether an image src has been reported as a false positive and is
+ * still within its exemption window.
+ * @param {string} src - The original image src
+ * @param {number} [now] - Current timestamp (defaults to Date.now())
+ * @returns {boolean} True if whitelisted
+ */
+function isWhitelisted(src, now) {
+  const whitelist = loadFalsePositiveWhitelist();
+  const expiry = whitelist[src];
+  if (!expiry) return false;
+  const currentTime = now === undefined ? Date.now() : now;
+  return currentTime < expiry;
+}
+
+/**
+ * Whitelists an image src so it is not replaced again.
+ * @param {string} src - The original image src
+ * @param {number} [days] - How long the exemption lasts (default 7 days)
+ * @returns {number} The expiry timestamp
+ */
+function addToWhitelist(src, days) {
+  const daysToKeep = days === undefined ? 7 : days;
+  const expiry = Date.now() + daysToKeep * 24 * 60 * 60 * 1000;
+  const whitelist = loadFalsePositiveWhitelist();
+  whitelist[src] = expiry;
+  saveFalsePositiveWhitelist(whitelist);
+  return expiry;
+}
+
+/**
+ * Removes expired entries from the false-positive whitelist.
+ * @param {number} [now] - Current timestamp (defaults to Date.now())
+ * @returns {number} The number of expired entries removed
+ */
+function cleanupWhitelist(now) {
+  const currentTime = now === undefined ? Date.now() : now;
+  const whitelist = loadFalsePositiveWhitelist();
+  const clean = {};
+  let removed = 0;
+  for (const [src, expiry] of Object.entries(whitelist)) {
+    if (currentTime < expiry) {
+      clean[src] = expiry;
+    } else {
+      removed += 1;
+    }
+  }
+  saveFalsePositiveWhitelist(clean);
+  return removed;
+}
+
+// ----- Schedule Management -----
+
+const SCHEDULE_STORAGE_KEY = 'fte_scheduleSettings';
+const DEFAULT_SCHEDULE = {
+  enabled: false,
+  start: '09:00',
+  end: '17:00',
+  days: [1, 2, 3, 4, 5],
+};
+
+/**
+ * Loads the activation schedule.
+ * @returns {Object} Schedule object
+ */
+function loadScheduleSettings() {
+  const saved = storage.get(SCHEDULE_STORAGE_KEY);
+  if (saved) {
+    try {
+      return { ...DEFAULT_SCHEDULE, ...JSON.parse(saved) };
+    } catch (e) {
+      console.warn('Could not load schedule settings', e);
+    }
+  }
+  return { ...DEFAULT_SCHEDULE };
+}
+
+/**
+ * Persists the activation schedule.
+ * @param {Object} schedule - Schedule object
+ */
+function saveScheduleSettings(schedule) {
+  try {
+    storage.set(SCHEDULE_STORAGE_KEY, JSON.stringify(schedule));
+  } catch (e) {
+    console.warn('Could not save schedule settings', e);
+  }
+}
+
+/**
+ * Determines whether the current time falls inside the configured activation
+ * window. Overnight windows (e.g. 22:00-06:00) are supported.
+ * @param {Date} [now] - The time to test (defaults to now)
+ * @returns {boolean} True if replacements should run
+ */
+function isWithinSchedule(now) {
+  const currentTime = now === undefined ? new Date() : now;
+  const schedule = loadScheduleSettings();
+  if (!schedule.enabled) return true;
+
+  const time = currentTime.getHours() * 60 + currentTime.getMinutes();
+  const [startHour, startMin] = schedule.start.split(':').map(Number);
+  const [endHour, endMin] = schedule.end.split(':').map(Number);
+  const startTime = startHour * 60 + startMin;
+  const endTime = endHour * 60 + endMin;
+
+  const dayIndex = currentTime.getDay();
+  const allowedDays = new Set(schedule.days);
+
+  if (startTime === endTime) return allowedDays.has(dayIndex);
+
+  if (startTime < endTime) {
+    // Same-day window
+    if (time < startTime || time >= endTime) return false;
+    return allowedDays.has(dayIndex);
+  }
+  // Overnight window: the end time falls on the following day
+  if (time >= startTime) return allowedDays.has(dayIndex);
+  if (time < endTime) {
+    // Early-morning hours belong to the previous day's window
+    const prevDay = (dayIndex + 6) % 7;
+    return allowedDays.has(prevDay);
+  }
+  return false;
+}
+
+/**
+ * Describes the current schedule state, including when it next activates.
+ * @param {Date} [now] - The time to describe (defaults to now)
+ * @returns {{within: boolean, nextStart: string|null, label: string}}
+ */
+function getScheduleInfo(now) {
+  const currentTime = now === undefined ? new Date() : now;
+  const schedule = loadScheduleSettings();
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  if (!schedule.enabled) {
+    return {
+      within: true,
+      nextStart: null,
+      label: 'Active all day',
+    };
+  }
+
+  const within = isWithinSchedule(currentTime);
+  const dayIndex = currentTime.getDay();
+  const dayName = dayNames[dayIndex];
+
+  if (within) {
+    const time = currentTime.getHours() * 60 + currentTime.getMinutes();
+    const [endHour, endMin] = schedule.end.split(':').map(Number);
+    const endsAt = endHour * 60 + endMin;
+    const nextStart = time < endsAt ? `until ${schedule.end}` : schedule.start;
+    return {
+      within: true,
+      nextStart,
+      label: `Active ${schedule.start}-${schedule.end} ${dayName}`,
+    };
+  }
+
+  // Find the next day on which the schedule is active
+  let nextStart = schedule.start;
+  let offset = 1;
+  while (offset < 7) {
+    const checkIndex = (dayIndex + offset) % 7;
+    if (schedule.days.includes(checkIndex)) {
+      nextStart = `${schedule.start} (${dayNames[checkIndex]})`;
+      break;
+    }
+    offset += 1;
+  }
+  return {
+    within: false,
+    nextStart,
+    label: `Inactive - next start ${nextStart}`,
+  };
 }
 
 // ----- Custom Elephant Images -----
@@ -342,7 +607,14 @@ function importSettings(jsonString) {
  */
 
 /** @type {Analytics} */
-let _analytics = { replacements: 0, byCategory: {}, byConfidence: {} };
+let _analytics = {
+  replacements: 0,
+  byCategory: {},
+  byConfidence: {},
+  falsePositiveReports: 0,
+  scheduleBypassCount: 0,
+  timeOfDayStats: {},
+};
 
 /**
  * Loads analytics from GM storage or memory.
@@ -400,7 +672,14 @@ function getAnalytics() {
  * Resets analytics.
  */
 function resetAnalytics() {
-  _analytics = { replacements: 0, byCategory: {}, byConfidence: {} };
+  _analytics = {
+    replacements: 0,
+    byCategory: {},
+    byConfidence: {},
+    falsePositiveReports: 0,
+    scheduleBypassCount: 0,
+    timeOfDayStats: {},
+  };
   saveAnalytics();
 }
 
@@ -820,6 +1099,17 @@ module.exports = {
   recordReplacement,
   getAnalytics,
   resetAnalytics,
+  getTheme,
+  setTheme,
+  isDarkMode,
+  isWhitelisted,
+  addToWhitelist,
+  cleanupWhitelist,
+  loadScheduleSettings,
+  saveScheduleSettings,
+  isWithinSchedule,
+  getScheduleInfo,
+  resetStorage,
   nsfwModel,
   undoLastReplacement,
 };

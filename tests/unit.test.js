@@ -33,6 +33,17 @@ const {
   removeBlockedDomain,
   getBlockedDomains,
   undoLastReplacement,
+  getTheme,
+  setTheme,
+  isDarkMode,
+  isWhitelisted,
+  addToWhitelist,
+  cleanupWhitelist,
+  loadScheduleSettings,
+  saveScheduleSettings,
+  isWithinSchedule,
+  getScheduleInfo,
+  resetStorage,
 } = require('../src/main');
 
 // Safety net: restore Math.random after every test so a failing test cannot
@@ -632,5 +643,100 @@ describe('Undo last replacement', () => {
 
   test('returns false when there is nothing to undo', () => {
     expect(undoLastReplacement()).toBe(false);
+  });
+});
+
+describe('Theme management', () => {
+  test('getTheme defaults to auto', () => {
+    expect(getTheme()).toBe('auto');
+  });
+
+  test('setTheme validates input', () => {
+    expect(setTheme('dark')).toBe(true);
+    expect(getTheme()).toBe('dark');
+    expect(setTheme('invalid')).toBe(false);
+    expect(getTheme()).toBe('dark');
+  });
+
+  test('isDarkMode respects explicit theme', () => {
+    setTheme('dark');
+    expect(isDarkMode()).toBe(true);
+    setTheme('light');
+    expect(isDarkMode()).toBe(false);
+  });
+});
+
+describe('False-positive whitelist', () => {
+  const testSrc = 'https://example.com/test.jpg';
+
+  beforeEach(() => {
+    resetStorage();
+  });
+
+  test('isWhitelisted returns false for unknown src', () => {
+    expect(isWhitelisted(testSrc)).toBe(false);
+  });
+
+  test('addToWhitelist whitelists an image for 7 days by default', () => {
+    const expiry = addToWhitelist(testSrc);
+    expect(isWhitelisted(testSrc)).toBe(true);
+    expect(expiry).toBeGreaterThan(Date.now());
+    // within the default 7-day window
+    expect(isWhitelisted(testSrc, Date.now() + 24 * 60 * 60 * 1000)).toBe(true);
+    // beyond the 7-day window
+    expect(isWhitelisted(testSrc, Date.now() + 8 * 24 * 60 * 60 * 1000)).toBe(false);
+  });
+
+  test('addToWhitelist accepts custom duration', () => {
+    addToWhitelist(testSrc, 1);
+    expect(isWhitelisted(testSrc, Date.now() + 12 * 60 * 60 * 1000)).toBe(true);
+    expect(isWhitelisted(testSrc, Date.now() + 36 * 60 * 60 * 1000)).toBe(false);
+  });
+
+  test('cleanupWhitelist removes expired entries', () => {
+    addToWhitelist(testSrc, 0); // expired immediately
+    expect(isWhitelisted(testSrc)).toBe(false);
+    expect(cleanupWhitelist()).toBe(1);
+  });
+});
+
+describe('Schedule management', () => {
+  beforeEach(() => {
+    resetStorage();
+    saveScheduleSettings({ enabled: false });
+  });
+
+  test('isWithinSchedule returns true when disabled', () => {
+    expect(isWithinSchedule(new Date())).toBe(true);
+  });
+
+  test('isWithinSchedule respects time window', () => {
+    saveScheduleSettings({ enabled: true, start: '09:00', end: '17:00', days: [1, 2, 3, 4, 5] });
+    const monday = new Date('2026-01-05T12:00:00'); // Monday 12pm
+    const sunday = new Date('2026-01-04T12:00:00'); // Sunday 12pm (not in days)
+    const morning = new Date('2026-01-05T08:00:00'); // Monday 8am (before start)
+    const evening = new Date('2026-01-05T18:00:00'); // Monday 6pm (after end)
+    expect(isWithinSchedule(monday)).toBe(true);
+    expect(isWithinSchedule(sunday)).toBe(false);
+    expect(isWithinSchedule(morning)).toBe(false);
+    expect(isWithinSchedule(evening)).toBe(false);
+  });
+
+  test('isWithinSchedule supports overnight windows', () => {
+    saveScheduleSettings({ enabled: true, start: '22:00', end: '06:00', days: [0, 1, 2, 3, 4, 5, 6] });
+    const night = new Date('2026-01-05T23:00:00'); // 11pm Monday
+    const earlyMorning = new Date('2026-01-06T03:00:00'); // 3am Tuesday
+    const midDay = new Date('2026-01-05T14:00:00'); // 2pm Monday
+    expect(isWithinSchedule(night)).toBe(true);
+    expect(isWithinSchedule(earlyMorning)).toBe(true);
+    expect(isWithinSchedule(midDay)).toBe(false);
+  });
+
+  test('getScheduleInfo describes the schedule state', () => {
+    saveScheduleSettings({ enabled: true, start: '09:00', end: '17:00', days: [1, 2, 3, 4, 5] });
+    const monday = new Date('2026-01-05T12:00:00');
+    const info = getScheduleInfo(monday);
+    expect(info.within).toBe(true);
+    expect(info.label).toContain('Active 09:00-17:00');
   });
 });

@@ -1,6 +1,6 @@
 # Roadmap — FetLife Technicolor Elephants
 
-## Current State (v0.4.0)
+## Current State (v0.4.1)
 
 - 21 categorized technicolor elephant images across 8 categories
 - Configurable NSFW threshold (default 0.70), persisted via GM storage
@@ -13,31 +13,34 @@
   - Undo last replacement button [#5]
   - Enable Animations toggle (fade in/out with reduced-motion respect) [#6]
   - Allowed Domains / Blocked Domains lists [#2]
+  - Theme toggle (auto/light/dark) [#10]
+  - Schedule activation window (start/end time, days of week) [#11]
 - **Stats HUD on toggle button** — live replacement-count badge [#7]
 - **Accessible UI** — dialog semantics, labelled controls, live regions, focus trap, Escape-to-close, focus restore, visible focus rings, reduced-motion styles [#8]
-- Analytics (replacements, by category, by confidence bucket)
+- **False-positive reporting** — click the ✗ overlay on a replaced elephant to whitelist it for 7 days and log to analytics [#9]
+- Analytics (replacements, by category, by confidence bucket, false-positive reports, schedule bypass count, time-of-day stats)
 - Keyboard shortcuts:
   - `Ctrl+Shift+E` toggle
   - `Ctrl+Shift+R` cycle style
   - `Ctrl+Shift+T` open settings
   - `Ctrl+Shift+U` undo last replacement [#5]
 - **Performance: IntersectionObserver + debounced MutationObserver** — only classifies visible images, 30s cooldown per image [#1]
-- 100 unit + integration + userscript tests passing
+- 111 unit + integration + userscript tests passing
 - Storage abstraction (`GM_getValue`/`GM_setValue` with in-memory test fallback)
 
 ## Next Major Enhancements
 
 | # | Enhancement | Description | Priority | Est. Effort |
 |---|-------------|-------------|----------|-------------|
-| 10 | **Dark mode settings panel** | Detect prefers-color-scheme or add theme toggle for the in-page settings UI | Low | Small |
-| 9 | **False-positive reporting** | One-click "this wasn't NSFW" feedback that logs to analytics and temporarily whitelists the image URL | Low | Medium |
-| 11 | **Scheduled activation window** | Only run during user-defined hours (e.g., 9am–5pm) with a per-day schedule | Low | Medium |
 | 12 | **Test coverage: integration with mock model** | Add Jest integration tests that stub nsfwjs.classify and assert DOM replacement behavior | Low | Medium |
 
 ## Completed Enhancements
 
 | # | Enhancement | Description |
 |---|-------------|-------------|
+| 10 | **Dark mode settings panel** | Auto-detects `prefers-color-scheme`; manual Light/Dark toggle in the panel; injects theme-aware CSS for the settings panel, stats box, and help text |
+| 9 | **False-positive reporting** | One-click "✗" overlay on replaced elephants reports the image as a false positive; logs to `falsePositiveReports` analytics; whitelists the original src for 7 days (configurable) so it is never re-replaced |
+| 11 | **Scheduled activation window** | Toggle to enable a start/end time + days-of-week schedule; `isWithinSchedule()` supports overnight windows (e.g. 22:00-06:00); script exits early with a `scheduleBypassCount` log when outside the window; `getScheduleInfo()` returns a human-readable status for the panel |
 | 3 | **Custom elephant URLs via settings UI** | Users can add/remove their own elephant image URLs from the in-page settings panel; mixed 50/50 with built-in when category selected |
 | 4 | **Settings export/import (JSON)** | Backup and restore all settings + custom elephant URLs as a JSON file via clipboard or textarea |
 | 1 | **Performance: IntersectionObserver + debounce** | Only classifies images near viewport; debounced MutationObserver (500ms); 30s cooldown per image |
@@ -49,6 +52,5 @@
 
 ## Notes
 
-- Items 10-12 remain. #10 (dark mode) is the cheapest remaining win and pairs well with the accessibility work.
-- Item 12 is partially satisfied already: `tests/userscript.test.js` evaluates the real userscript in jsdom and asserts UI behaviour, and `tests/integration.test.js` stubs `nsfwjs.classify`.
-- Recommended next order: 10 → 9 → 11 → 12.
+- Only #12 remains. `tests/userscript.test.js` already evaluates the real userscript in jsdom and asserts UI behaviour, and `tests/integration.test.js` stubs `nsfwjs.classify`, so #12 is effectively satisfied.
+- The `storage` abstraction in `src/main.js` now has a real in-memory fallback (`_memoryStore`) so persistence works in tests without `GM_*` globals.
