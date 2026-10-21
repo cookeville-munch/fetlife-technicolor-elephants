@@ -1475,35 +1475,53 @@
     }
   }
 
+  /**
+   * Attempts to load the NSFW model with a specific TensorFlow backend.
+   * @param {string} backend - The backend name ('gl', 'cpu', 'wasm')
+   * @returns {Promise<boolean>} True if the model loaded successfully
+   */
+  async function tryLoadModelWithBackend(backend) {
+    try {
+      console.log(`FetLife Technicolor Elephants: Trying backend "${backend}"...`);
+      tf.setBackend(backend);
+      await tf.ready();
+
+      nsfwModel = await nsfwjs.load();
+      console.log(`FetLife Technicolor Elephants: NSFW.js model loaded successfully with ${backend} backend.`);
+      await replacePenisImages();
+      return true;
+    } catch (error) {
+      console.warn(`FetLife Technicolor Elephants: Backend "${backend}" failed:`, error.message);
+      // Clean up backend state before trying the next one
+      try {
+        tf.removeBackend(backend);
+      } catch (cleanupError) {
+        console.debug('FetLife Technicolor Elephants: Backend cleanup skipped:', cleanupError.message);
+      }
+      return false;
+    }
+  }
+
   async function loadModel() {
     if (typeof tf === 'undefined' || typeof nsfwjs === 'undefined') {
       console.error('FetLife Technicolor Elephants: Required libraries (tf/nsfwjs) are not loaded. Check @require URLs or network connectivity.');
       return false;
     }
     console.log('FetLife Technicolor Elephants: Loading NSFW.js model...');
-    try {
-      tf.setBackend('wasm');
-      await tf.ready();
 
-      nsfwModel = await nsfwjs.load();
-      console.log('FetLife Technicolor Elephants: NSFW.js model loaded successfully.');
-      await replacePenisImages();
-      return true;
-    } catch (error) {
-      console.error('FetLife Technicolor Elephants: Failed to load NSFW.js model:', error);
-      try {
-        // Fallback to WebGL/CPU backend
-        tf.setBackend('gl');
-        await tf.ready();
-        nsfwModel = await nsfwjs.load();
-        console.log('FetLife Technicolor Elephants: NSFW.js model loaded with WebGL fallback.');
-        await replacePenisImages();
-        return true;
-      } catch (fallbackError) {
-        console.error('FetLife Technicolor Elephants: All model load attempts failed:', fallbackError);
-        return false;
-      }
+    // Try WebGL first (most reliable in userscript/browser contexts).
+    // WASM requires the .wasm file to be served correctly, which often fails
+    // in userscript sandboxes where the CDN path is not resolvable.
+    // Backends MUST be tried sequentially: tf.setBackend() mutates global state.
+    const backends = ['gl', 'cpu']; // WebGL, then pure CPU
+    for (const backend of backends) {
+      // eslint-disable-next-line no-await-in-loop
+      const loaded = await tryLoadModelWithBackend(backend);
+      if (loaded) return true;
     }
+
+    console.error('FetLife Technicolor Elephants: All model load attempts failed.');
+    return false;
   }
 
   // ----- Initialization -----
