@@ -1,6 +1,6 @@
 # Roadmap — FetLife Technicolor Elephants
 
-## Current State (v0.4.1)
+## Current State (v0.4.2)
 
 - 21 categorized technicolor elephant images across 8 categories
 - Configurable NSFW threshold (default 0.70), persisted via GM storage
@@ -51,5 +51,5 @@ No remaining items. All enhancements from the roadmap are complete.
 
 ## Notes
 
-- All 12 roadmap items are complete. The project is feature-complete at v0.4.1.
+- All 12 roadmap items are complete. The project is feature-complete at v0.4.2.
 - The `storage` abstraction in `src/main.js` now has a real in-memory fallback (`_memoryStore`) so persistence works in tests without `GM_*` globals.

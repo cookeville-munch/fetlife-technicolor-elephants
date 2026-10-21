@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FetLife Technicolor Elephants
 // @namespace    http://tampermonkey.net/
-// @version      0.4
+// @version      0.4.2
 // @description  Replaces images of penises on FetLife with pictures of tiny technicolor elephants using NSFW.js for detection. Includes configurable thresholds, image categories, analytics, keyboard shortcuts, custom elephant URLs, domain allow/block lists, undo, and animations.
 // @author       You
 // @match        https://fetlife.com/*
