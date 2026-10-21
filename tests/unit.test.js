@@ -39,7 +39,6 @@ const {
   isWhitelisted,
   addToWhitelist,
   cleanupWhitelist,
-  loadScheduleSettings,
   saveScheduleSettings,
   isWithinSchedule,
   getScheduleInfo,
@@ -711,7 +710,12 @@ describe('Schedule management', () => {
   });
 
   test('isWithinSchedule respects time window', () => {
-    saveScheduleSettings({ enabled: true, start: '09:00', end: '17:00', days: [1, 2, 3, 4, 5] });
+    saveScheduleSettings({
+      enabled: true,
+      start: '09:00',
+      end: '17:00',
+      days: [1, 2, 3, 4, 5],
+    });
     const monday = new Date('2026-01-05T12:00:00'); // Monday 12pm
     const sunday = new Date('2026-01-04T12:00:00'); // Sunday 12pm (not in days)
     const morning = new Date('2026-01-05T08:00:00'); // Monday 8am (before start)
@@ -723,7 +727,12 @@ describe('Schedule management', () => {
   });
 
   test('isWithinSchedule supports overnight windows', () => {
-    saveScheduleSettings({ enabled: true, start: '22:00', end: '06:00', days: [0, 1, 2, 3, 4, 5, 6] });
+    saveScheduleSettings({
+      enabled: true,
+      start: '22:00',
+      end: '06:00',
+      days: [0, 1, 2, 3, 4, 5, 6],
+    });
     const night = new Date('2026-01-05T23:00:00'); // 11pm Monday
     const earlyMorning = new Date('2026-01-06T03:00:00'); // 3am Tuesday
     const midDay = new Date('2026-01-05T14:00:00'); // 2pm Monday
@@ -733,7 +742,12 @@ describe('Schedule management', () => {
   });
 
   test('getScheduleInfo describes the schedule state', () => {
-    saveScheduleSettings({ enabled: true, start: '09:00', end: '17:00', days: [1, 2, 3, 4, 5] });
+    saveScheduleSettings({
+      enabled: true,
+      start: '09:00',
+      end: '17:00',
+      days: [1, 2, 3, 4, 5],
+    });
     const monday = new Date('2026-01-05T12:00:00');
     const info = getScheduleInfo(monday);
     expect(info.within).toBe(true);

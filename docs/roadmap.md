@@ -30,14 +30,13 @@
 
 ## Next Major Enhancements
 
-| # | Enhancement | Description | Priority | Est. Effort |
-|---|-------------|-------------|----------|-------------|
-| 12 | **Test coverage: integration with mock model** | Add Jest integration tests that stub nsfwjs.classify and assert DOM replacement behavior | Low | Medium |
+No remaining items. All enhancements from the roadmap are complete.
 
 ## Completed Enhancements
 
 | # | Enhancement | Description |
 |---|-------------|-------------|
+| 12 | **Integration tests with a mock NSFW model** | `tests/integration.test.js` stubs `nsfwjs.classify` with a mock model and asserts DOM replacement behavior for Porn/Hentai/Sexy/Neutral classifications, threshold edge cases, error handling, concurrent processing, `replaceWithElephant`, and `undoLastReplacement` LIFO ordering |
 | 10 | **Dark mode settings panel** | Auto-detects `prefers-color-scheme`; manual Light/Dark toggle in the panel; injects theme-aware CSS for the settings panel, stats box, and help text |
 | 9 | **False-positive reporting** | One-click "✗" overlay on replaced elephants reports the image as a false positive; logs to `falsePositiveReports` analytics; whitelists the original src for 7 days (configurable) so it is never re-replaced |
 | 11 | **Scheduled activation window** | Toggle to enable a start/end time + days-of-week schedule; `isWithinSchedule()` supports overnight windows (e.g. 22:00-06:00); script exits early with a `scheduleBypassCount` log when outside the window; `getScheduleInfo()` returns a human-readable status for the panel |
@@ -52,5 +51,5 @@
 
 ## Notes
 
-- Only #12 remains. `tests/userscript.test.js` already evaluates the real userscript in jsdom and asserts UI behaviour, and `tests/integration.test.js` stubs `nsfwjs.classify`, so #12 is effectively satisfied.
+- All 12 roadmap items are complete. The project is feature-complete at v0.4.1.
 - The `storage` abstraction in `src/main.js` now has a real in-memory fallback (`_memoryStore`) so persistence works in tests without `GM_*` globals.
